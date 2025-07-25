@@ -19,6 +19,7 @@
 use Luracast\Restler\RestException;
 
 require_once DOL_DOCUMENT_ROOT.'/compta/bank/class/account.class.php';
+require_once DOL_DOCUMENT_ROOT.'/compta/bank/class/bankcateg.class.php';
 
 /**
  * API class for accounts
@@ -477,6 +478,150 @@ class MoneyMannager extends DolibarrApi
 		}
 
 		return $list;
+	}
+
+	/**
+	 * Get all categories
+	 *
+	 * @return array
+	 * @throws RestException
+	 *
+	 * @url GET /categories
+	 */
+	public function getCategories()
+	{
+	
+		if (!DolibarrApiAccess::$user->rights->banque->configurer) {
+			throw new RestException(401);
+		}
+
+		$sql = "SELECT rowid, label FROM ".MAIN_DB_PREFIX."bank_categ";
+		$sql .= ' WHERE entity IN ('.getEntity('bank_categ').')';
+		$result = $this->db->query($sql);
+		if ($result) {
+			$list = array();
+			while ($obj = $this->db->fetch_object($result)) {
+				$list[] = $obj;
+			}
+			return $list;
+		} else {
+			throw new RestException(500, $this->db->lasterror());
+		}
+	}
+
+	/**
+	 * Get a category
+	 *
+	 * @param int $id
+	 * @return object
+	 * @throws RestException
+	 *
+	 * @url GET /categories/{id}
+	 */
+	public function getCategory($id)
+	{
+		if (!DolibarrApiAccess::$user->rights->banque->configurer) {
+			throw new RestException(401);
+		}
+
+		$categ = new BankCateg($this->db);
+		$res =$categ->fetch($id) ;
+		if ($res > 0 && $categ->id > 0) {
+		 $this->_cleanObjectDatas($categ);
+		
+			return $res;
+		} else {
+			throw new RestException(404, 'Category not found');
+		}
+	}
+
+	/**
+	 * Create a category
+	 *
+	 * @param array $request_data
+	 * @return int
+	 * @throws RestException
+	 *
+	 * @url POST /categories
+	 */
+	public function createCategory($request_data)
+	{
+		if (!DolibarrApiAccess::$user->rights->banque->configurer) {
+			throw new RestException(401);
+		}
+
+		if (empty($request_data['label'])) {
+			throw new RestException(400, 'Label is required');
+		}
+
+		$categ = new BankCateg($this->db);
+		$categ->label = $request_data['label'];
+		if ($categ->create(DolibarrApiAccess::$user) > 0) {
+			return $categ->id;
+		} else {
+			throw new RestException(500, $categ->error);
+		}
+	}
+
+	/**
+	 * Update a category
+	 *
+	 * @param int $id
+	 * @param array $request_data
+	 * @return object
+	 * @throws RestException
+	 *
+	 * @url PUT /categories/{id}
+	 */
+	public function updateCategory($id, $request_data)
+	{
+		if (!DolibarrApiAccess::$user->rights->banque->configurer) {
+			throw new RestException(401);
+		}
+
+		if (empty($request_data['label'])) {
+			throw new RestException(400, 'Label is required');
+		}
+
+		$categ = new BankCateg($this->db);
+		if ($categ->fetch($id) > 0) {
+			$categ->label = $request_data['label'];
+			if ($categ->update(DolibarrApiAccess::$user) > 0) {
+			$this->_cleanObjectDatas($categ);
+				return $categ;
+			} else {
+				throw new RestException(500, $categ->error);
+			}
+		} else {
+			throw new RestException(404, 'Category not found');
+		}
+	}
+
+	/**
+	 * Delete a category
+	 *
+	 * @param int $id
+	 * @return array
+	 * @throws RestException
+	 *
+	 * @url DELETE /categories/{id}
+	 */
+	public function deleteCategory($id)
+	{
+		if (!DolibarrApiAccess::$user->rights->banque->configurer) {
+			throw new RestException(401);
+		}
+
+		$categ = new BankCateg($this->db);
+		if ($categ->fetch($id) > 0) {
+			if ($categ->delete(DolibarrApiAccess::$user) > 0) {
+				return array('message' => 'Category deleted');
+			} else {
+				throw new RestException(500, $categ->error);
+			}
+		} else {
+			throw new RestException(404, 'Category not found');
+		}
 	}
 
 	/**
