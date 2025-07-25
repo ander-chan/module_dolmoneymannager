@@ -2,6 +2,14 @@
 
 This module provides a REST API for managing bank accounts in Dolibarr.
 
+## Download
+
+You can download the packaged module from the [releases page](https://github.com/ander-chan/module_dolmoneymannager/releases/tag/v1.0.0).
+
+## Compatibility
+
+This module has only been tested with Dolibarr version 17.
+
 ## API Endpoints
 
 The API is exposed through the `class/api_moneymannager.class.php` file and provides the following endpoints:
